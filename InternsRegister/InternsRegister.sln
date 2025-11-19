@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36705.20
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternsRegister.Application", "InternsRegister.Application\InternsRegister.Application.csproj", "{28EE562E-37E7-47FF-926C-CD6F0D01087D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{13EE25F7-0944-4262-A425-DA7F235C1B87} = {13EE25F7-0944-4262-A425-DA7F235C1B87}
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2} = {354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}
+		{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541} = {54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternsRegister.Domain", "InternsRegister.Domain\InternsRegister.Domain.csproj", "{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternsRegister.Infrastructure", "InternsRegister.Infrastructure\InternsRegister.Infrastructure.csproj", "{13EE25F7-0944-4262-A425-DA7F235C1B87}"
+	ProjectSection(ProjectDependencies) = postProject
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2} = {354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}
+		{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541} = {54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternsRegister.Persistence", "InternsRegister.Persistence\InternsRegister.Persistence.csproj", "{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}"
+	ProjectSection(ProjectDependencies) = postProject
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2} = {354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решения", "Элементы решения", "{754FC069-D67B-A9D7-50A1-8D1CA196D8F1}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternsRegister.Web", "InternsRegister.Web\InternsRegister.Web.csproj", "{07044F0E-4737-71E0-2FC1-3A4366F204DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{28EE562E-37E7-47FF-926C-CD6F0D01087D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28EE562E-37E7-47FF-926C-CD6F0D01087D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28EE562E-37E7-47FF-926C-CD6F0D01087D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28EE562E-37E7-47FF-926C-CD6F0D01087D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{354CD7E3-C8D4-4D9A-BDDA-7CAC62AB27D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13EE25F7-0944-4262-A425-DA7F235C1B87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13EE25F7-0944-4262-A425-DA7F235C1B87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13EE25F7-0944-4262-A425-DA7F235C1B87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13EE25F7-0944-4262-A425-DA7F235C1B87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54B7CCAA-9B29-4DF2-9B0D-A581C74EE541}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07044F0E-4737-71E0-2FC1-3A4366F204DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07044F0E-4737-71E0-2FC1-3A4366F204DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07044F0E-4737-71E0-2FC1-3A4366F204DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07044F0E-4737-71E0-2FC1-3A4366F204DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D02C831D-D58A-416B-9619-C806A3ABF54B}
+	EndGlobalSection
+EndGlobal

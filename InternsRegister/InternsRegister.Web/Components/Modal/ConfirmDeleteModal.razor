@@ -1,0 +1,27 @@
+﻿@rendermode InteractiveServer
+
+<div class="modal @(!string.IsNullOrEmpty(ModalId) ? "modal-open" : "")">
+    <div class="modal-box">
+        <h3 class="text-lg font-bold">Подтвердите удаление</h3>
+        <p class="py-4">
+            Вы уверены, что хотите удалить <strong>@EntityName</strong>?
+            <br /><br />
+            <span class="text-error">Это действие нельзя отменить.</span>
+        </p>
+
+        <div class="modal-action">
+            <button class="btn btn-error" @onclick="Confirm">Удалить</button>
+            <button class="btn" @onclick="Cancel">Отмена</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? ModalId { get; set; }
+    [Parameter] public string EntityName { get; set; } = "";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task Confirm() => await OnConfirm.InvokeAsync();
+    private async Task Cancel() => await OnCancel.InvokeAsync();
+}

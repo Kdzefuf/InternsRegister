@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="DTOs\DirectionDto.cs~RF60438b1.TMP" />
+    <None Remove="DTOs\InternDto.cs~RF7a95a7.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.0" />
+    <PackageReference Include="MediatR" Version="13.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.11" />
+    <PackageReference Include="System.Runtime" Version="4.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InternsRegister.Domain\InternsRegister.Domain.csproj" />
+    <ProjectReference Include="..\InternsRegister.Infrastructure\InternsRegister.Infrastructure.csproj" />
+    <ProjectReference Include="..\InternsRegister.Persistence\InternsRegister.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

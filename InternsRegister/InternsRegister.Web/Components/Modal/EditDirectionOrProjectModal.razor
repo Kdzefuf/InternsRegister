@@ -1,0 +1,242 @@
+﻿@using InternsRegister.Application.Interfaces
+@using InternsRegister.Application.DTOs
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@inject IDirectionService DirectionService
+@inject IProjectService ProjectService
+@inject IInternService InternService
+@inject IJSRuntime JS
+
+<div class="modal @(IsOpen ? "modal-open" : "")" id="@ModalId">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <h3 class="text-xl font-bold mb-6">
+            @(IsCreating ? "Создать" : "Редактировать")
+            @(IsDirection ? "направление" : "проект")
+        </h3>
+
+        @if (editContext != null)
+        {
+            <EditForm EditContext="@editContext" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-medium">
+                            Название <span class="text-error">*</span>
+                        </span>
+                    </label>
+                    <InputText @bind-Value="editModel.Name"
+                               class="input input-bordered w-full"
+                               placeholder="Введите название" />
+                    <ValidationMessage For="() => editModel.Name" class="text-error text-sm mt-1" />
+                </div>
+
+                @if (!IsCreating)
+                {
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">
+                                Прикреплённые стажёры
+                                <span class="text-secondary">(@selectedInterns.Count из @allInterns.Count)</span>
+                            </span>
+                        </label>
+                        <div class="max-h-96 overflow-y-auto border rounded-lg p-4 bg-base-100">
+                            @if (allInterns.Any())
+                            {
+                                @foreach (var intern in allInterns)
+                                {
+                                    var isChecked = selectedInterns.Contains(intern.Id);
+                                    <label class="flex items-center space-x-3 py-2 cursor-pointer hover:bg-base-200 px-3 rounded transition">
+                                        <input type="checkbox"
+                                               class="checkbox checkbox-sm"
+                                               checked="@isChecked"
+                                               @onchange="() => ToggleIntern(intern.Id)" />
+                                        <span class="text-sm leading-tight">
+                                            <div class="font-medium">@intern.FullName</div>
+                                            <div class="text-xs opacity-70">@intern.Email</div>
+                                        </span>
+                                    </label>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-gray-500 italic text-center py-8">Стажёров пока нет</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="modal-action mt-8">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="loading loading-spinner loading-sm"></span>
+                            <span>Сохранение...</span>
+                        }
+                        else
+                        {
+                            <span>Сохранить</span>
+                        }
+                    </button>
+                    <button type="button" class="btn" @onclick="Close" disabled="@isSaving">
+                        Отмена
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? ModalId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private EditModel editModel = new();
+    private EditContext? editContext;
+    private List<InternDto> allInterns = new();
+    private HashSet<Guid> selectedInterns = new();
+    private bool isSaving = false;
+
+    private bool IsOpen => editModel.Id.HasValue || editModel.IsCreating;
+    private bool IsDirection => editModel.Type == "direction";
+    private bool IsCreating => editModel.IsCreating;
+
+    public class EditModel
+    {
+        public Guid? Id { get; set; }
+        public string Type { get; set; } = "";
+
+        [Required(ErrorMessage = "Введите название")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Название от 2 до 100 символов")]
+        public string Name { get; set; } = "";
+
+        public bool IsCreating { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        allInterns = await InternService.GetAllAsync();
+    }
+
+    private void UpdateEditContext()
+    {
+        editContext = new EditContext(editModel);
+    }
+
+    public void OpenDirection(Guid id, string currentName, List<Guid> currentInternIds)
+    {
+        editModel = new EditModel
+        {
+            Id = id,
+            Type = "direction",
+            Name = currentName,
+            IsCreating = false
+        };
+        selectedInterns = new HashSet<Guid>(currentInternIds);
+        UpdateEditContext();
+        StateHasChanged();
+    }
+
+    public void OpenProject(Guid id, string currentName, List<Guid> currentInternIds)
+    {
+        editModel = new EditModel
+        {
+            Id = id,
+            Type = "project",
+            Name = currentName,
+            IsCreating = false
+        };
+        selectedInterns = new HashSet<Guid>(currentInternIds);
+        UpdateEditContext();
+        StateHasChanged();
+    }
+
+    public void OpenCreateDirection()
+    {
+        editModel = new EditModel
+        {
+            Type = "direction",
+            Name = "",
+            IsCreating = true
+        };
+        selectedInterns.Clear();
+        UpdateEditContext();
+        StateHasChanged();
+    }
+
+    public void OpenCreateProject()
+    {
+        editModel = new EditModel
+        {
+            Type = "project",
+            Name = "",
+            IsCreating = true
+        };
+        selectedInterns.Clear();
+        UpdateEditContext();
+        StateHasChanged();
+    }
+
+    private void ToggleIntern(Guid internId)
+    {
+        if (selectedInterns.Contains(internId))
+            selectedInterns.Remove(internId);
+        else
+            selectedInterns.Add(internId);
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (editContext == null || !editContext.Validate()) return;
+
+        isSaving = true;
+        try
+        {
+            if (IsDirection)
+            {
+                if (IsCreating)
+                {
+                    var dir = await DirectionService.CreateOrGetAsync(editModel.Name.Trim());
+                    await OnSaved.InvokeAsync(dir);
+                }
+                else
+                {
+                    await DirectionService.UpdateAsync(editModel.Id!.Value, editModel.Name.Trim(), selectedInterns.ToList());
+                    await OnSaved.InvokeAsync();
+                }
+            }
+            else
+            {
+                if (IsCreating)
+                {
+                    var proj = await ProjectService.CreateOrGetAsync(editModel.Name.Trim());
+                    await OnSaved.InvokeAsync(proj);
+                }
+                else
+                {
+                    await ProjectService.UpdateAsync(editModel.Id!.Value, editModel.Name.Trim(), selectedInterns.ToList());
+                    await OnSaved.InvokeAsync();
+                }
+            }
+
+            await Close();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Ошибка: " + ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        editModel = new EditModel();
+        selectedInterns.Clear();
+        editContext = null;
+        await OnClose.InvokeAsync();
+    }
+}

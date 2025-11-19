@@ -1,0 +1,156 @@
+﻿@page "/interns/create"
+@using InternsRegister.Application.Interfaces
+@using InternsRegister.Application.DTOs
+@using InternsRegister.Web.Components.Modal
+@inject IInternService InternService
+@inject IDirectionService DirectionService
+@inject IProjectService ProjectService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<h3 class="text-3xl font-bold mb-6">Добавить стажёра</h3>
+
+<EditForm FormName="CreateInternForm" Model="@model" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="alert alert-danger mb-6" />
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div>
+            <label class="label"><span class="label-text">Имя *</span></label>
+            <InputText @bind-Value="model.FirstName" class="input input-bordered w-full" placeholder="Иван" />
+            <ValidationMessage For="() => model.FirstName" class="text-error text-sm" />
+        </div>
+
+        <div>
+            <label class="label"><span class="label-text">Фамилия *</span></label>
+            <InputText @bind-Value="model.LastName" class="input input-bordered w-full" placeholder="Иванов" />
+            <ValidationMessage For="() => model.LastName" />
+        </div>
+
+        <div>
+            <label class="label"><span class="label-text">Пол *</span></label>
+            <InputSelect @bind-Value="model.Gender" class="select select-bordered w-full">
+                <option value="">Выберите пол</option>
+                <option value="Male">Мужской</option>
+                <option value="Female">Женский</option>
+            </InputSelect>
+            <ValidationMessage For="() => model.Gender" />
+        </div>
+
+        <div>
+            <label class="label"><span class="label-text">Email *</span></label>
+            <InputText @bind-Value="model.Email" class="input input-bordered w-full" type="email" />
+            <ValidationMessage For="() => model.Email" />
+        </div>
+
+        <div>
+            <label class="label"><span class="label-text">Телефон</span></label>
+            <InputText @bind-Value="model.Phone" class="input input-bordered w-full" placeholder="+79123456789" />
+            <div class="text-xs text-gray-500 mt-1">Формат: +7XXXXXXXXXX</div>
+            <ValidationMessage For="() => model.Phone" />
+        </div>
+
+        <div>
+            <label class="label"><span class="label-text">Дата рождения *</span></label>
+            <InputDate @bind-Value="model.BirthDate" class="input input-bordered w-full" />
+            <ValidationMessage For="() => model.BirthDate" />
+        </div>
+
+        <div class="md:col-span-2">
+            <label class="label"><span class="label-text">Направление стажировки *</span></label>
+            <div class="flex gap-3">
+                <select @bind="SelectedDirectionId" class="select select-bordered flex-1">
+                    <option value="">Выберите направление</option>
+                    @foreach (var d in directions)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+                <button type="button" class="btn btn-success btn-square" @onclick="() => OpenCreateDirectionModal()">
+                    +
+                </button>
+            </div>
+        </div>
+
+        <div class="md:col-span-2">
+            <label class="label"><span class="label-text">Текущий проект</span></label>
+            <div class="flex gap-3">
+                <select @bind="SelectedProjectId" class="select select-bordered flex-1">
+                    <option value="">Не выбран</option>
+                    @foreach (var p in projects)
+                    {
+                        <option value="@p.Id">@p.Name</option>
+                    }
+                </select>
+                <button type="button" class="btn btn-primary btn-square" @onclick="() => OpenCreateProjectModal()">
+                    +
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flex gap-4">
+        <button type="submit" class="btn btn-primary">Сохранить стажёра</button>
+        <NavLink href="/interns" class="btn btn-ghost">Отмена</NavLink>
+    </div>
+</EditForm>
+
+<EditDirectionOrProjectModal @ref="modal"
+                       OnSaved="OnModalSaved"
+                       OnClose="() => modalIsOpen = false" />
+
+@code {
+    private CreateInternDto model = new();
+    private List<DirectionDto> directions = new();
+    private List<ProjectDto> projects = new();
+
+    private Guid? SelectedDirectionId;
+    private Guid? SelectedProjectId;
+
+    private EditDirectionOrProjectModal? modal;
+    private bool modalIsOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        directions = await DirectionService.GetAllAsync();
+        projects = await ProjectService.GetAllAsync();
+    }
+
+    private void OpenCreateDirectionModal()
+    {
+        modal?.OpenCreateDirection();
+        modalIsOpen = true;
+    }
+
+    private void OpenCreateProjectModal()
+    {
+        modal?.OpenCreateProject();
+        modalIsOpen = true;
+    }
+
+    private async Task OnModalSaved()
+    {
+        directions = await DirectionService.GetAllAsync();
+        projects = await ProjectService.GetAllAsync();
+
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmit()
+    {
+        model.DirectionId = SelectedDirectionId;
+        model.ProjectId = SelectedProjectId;
+
+        try
+        {
+            await InternService.CreateAsync(model);
+            Nav.NavigateTo("/interns");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", ex.Message);
+        }
+    }
+}

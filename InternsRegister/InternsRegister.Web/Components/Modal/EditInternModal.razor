@@ -1,0 +1,259 @@
+﻿@using InternsRegister.Application.DTOs
+@using InternsRegister.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@inject IInternService InternService
+@inject IDirectionService DirectionService
+@inject IProjectService ProjectService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<div class="modal @(IsOpen ? "modal-open" : "")" id="edit-intern-modal">
+    <div class="modal-box w-11/12 max-w-4xl">
+        <h3 class="text-2xl font-bold mb-6">
+            @(CurrentIntern?.Id == null ? "Добавить стажёра" : "Редактировать стажёра")
+        </h3>
+
+        @if (editContext != null)
+        {
+            <EditForm EditContext="@editContext" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-5">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Имя <span class="text-error">*</span></span>
+                            </label>
+                            <InputText @bind-Value="form.FirstName" class="input input-bordered" />
+                            <ValidationMessage For="() => form.FirstName" class="text-error text-sm mt-1" />
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Фамилия <span class="text-error">*</span></span>
+                            </label>
+                            <InputText @bind-Value="form.LastName" class="input input-bordered" />
+                            <ValidationMessage For="() => form.LastName" class="text-error text-sm mt-1" />
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Email <span class="text-error">*</span></span>
+                            </label>
+                            <InputText @bind-Value="form.Email" class="input input-bordered" />
+                            <ValidationMessage For="() => form.Email" class="text-error text-sm mt-1" />
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Телефон</span>
+                            </label>
+                            <InputText @bind-Value="form.Phone" class="input input-bordered" placeholder="+79991234567" />
+                            <ValidationMessage For="() => form.Phone" class="text-error text-sm mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Пол</span>
+                            </label>
+                            <select @bind="form.Gender" class="select select-bordered">
+                                <option value="">Не указан</option>
+                                <option value="Male">Мужской</option>
+                                <option value="Female">Женский</option>
+                            </select>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Дата рождения</span>
+                            </label>
+                            <InputDate @bind-Value="form.BirthDate" class="input input-bordered" />
+                            <ValidationMessage For="() => form.BirthDate" class="text-error text-sm mt-1" />
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Направление</span>
+                            </label>
+                            <select @bind="form.DirectionName" class="select select-bordered">
+                                <option value="">Без направления</option>
+                                @if (directions != null)
+                                {
+                                    @foreach (var dir in directions)
+                                    {
+                                        <option value="@dir.Name">@dir.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Проект</span>
+                            </label>
+                            <select @bind="form.ProjectName" class="select select-bordered">
+                                <option value="">Без проекта</option>
+                                @if (projects != null)
+                                {
+                                    @foreach (var proj in projects)
+                                    {
+                                        <option value="@proj.Name">@proj.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-action mt-8">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="loading loading-spinner loading-sm"></span>
+                            <span>Сохранение...</span>
+                        }
+                        else
+                        {
+                            <span>Сохранить</span>
+                        }
+                    </button>
+                    <button type="button" class="btn" @onclick="Close" disabled="@isSaving">
+                        Отмена
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private InternFormModel form = new();
+    private EditContext? editContext;
+    private List<DirectionDto>? directions;
+    private List<ProjectDto>? projects;
+    private bool isSaving = false;
+    private InternDto? CurrentIntern;
+
+    private bool IsOpen => CurrentIntern != null || form.IsCreating;
+
+    public class InternFormModel
+    {
+        public Guid? Id { get; set; }
+
+        [Required(ErrorMessage = "Введите имя")]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "Введите фамилию")]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "Введите email")]
+        [EmailAddress(ErrorMessage = "Неверный формат email")]
+        public string Email { get; set; } = "";
+
+        [RegularExpression(@"^\+7\d{10}$", ErrorMessage = "Телефон должен быть в формате +79991234567")]
+        public string? Phone { get; set; }
+
+        public string Gender { get; set; } = "";
+        public DateOnly? BirthDate { get; set; }
+
+        public string? DirectionName { get; set; }
+        public string? ProjectName { get; set; }
+
+        public bool IsCreating { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        directions = await DirectionService.GetAllAsync();
+        projects = await ProjectService.GetAllAsync();
+    }
+
+    private void UpdateEditContext()
+    {
+        editContext = new EditContext(form);
+    }
+
+    public void Open(InternDto intern)
+    {
+        CurrentIntern = intern;
+
+        form = new InternFormModel
+        {
+            Id = intern.Id,
+            FirstName = intern.FirstName,
+            LastName = intern.LastName,
+            Email = intern.Email,
+            Phone = intern.Phone,
+            Gender = intern.Gender.ToString(),
+            BirthDate = intern.BirthDate,
+            DirectionName = intern.Direction,
+            ProjectName = intern.Project
+        };
+
+        UpdateEditContext();
+        StateHasChanged();
+    }
+
+    public void OpenCreate()
+    {
+        CurrentIntern = null;
+        form = new InternFormModel { IsCreating = true };
+        UpdateEditContext();
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (editContext == null || !editContext.Validate()) return;
+
+        isSaving = true;
+        try
+        {
+            var dto = new CreateInternDto
+            {
+                FirstName = form.FirstName.Trim(),
+                LastName = form.LastName.Trim(),
+                Gender = Enum.Parse<Gender>(form.Gender),
+                Email = form.Email.Trim().ToLower(),
+                Phone = string.IsNullOrWhiteSpace(form.Phone) ? null : form.Phone.Trim(),
+                BirthDate = form.BirthDate ?? DateOnly.FromDateTime(DateTime.Today),
+                DirectionName = string.IsNullOrWhiteSpace(form.DirectionName) ? null : form.DirectionName,
+                ProjectName = string.IsNullOrWhiteSpace(form.ProjectName) ? null : form.ProjectName
+            };
+
+            if (form.Id.HasValue)
+            {
+                await InternService.UpdateAsync(form.Id.Value, dto);
+            }
+            else
+            {
+                await InternService.CreateAsync(dto);
+            }
+
+            await OnSaved.InvokeAsync();
+            await Close();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        CurrentIntern = null;
+        form = new InternFormModel();
+        editContext = null;
+        await OnClose.InvokeAsync();
+    }
+}

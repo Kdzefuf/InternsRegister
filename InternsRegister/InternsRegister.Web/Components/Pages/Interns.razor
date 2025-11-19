@@ -1,0 +1,251 @@
+﻿@page "/interns"
+@using InternsRegister.Application.Interfaces
+@using InternsRegister.Application.DTOs
+@using InternsRegister.Web.Components.Modal
+@inject IInternService InternService
+@inject IJSRuntime JS
+@implements IDisposable
+@rendermode InteractiveServer
+
+<h3 class="text-3xl font-bold mb-6">Стажёры</h3>
+
+<div class="flex flex-col lg:flex-row gap-4 mb-6">
+    <a href="/interns/create" class="btn btn-primary">+ Добавить стажёра</a>
+
+    <div class="flex-1"></div>
+
+    <input type="text" placeholder="Поиск по ФИО или email..."
+           class="input input-bordered w-full max-w-xs"
+           @bind="searchQuery" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
+</div>
+
+<div class="flex flex-col md:flex-row gap-4 mb-6">
+    <select @bind="selectedDirection"
+            @bind:after="ApplyFilters"
+            class="select select-bordered w-full md:w-64">
+        <option value="">Все направления</option>
+        @if (directions != null)
+        {
+            @foreach (var dir in directions)
+            {
+                <option value="@dir.Name">@dir.Name (@dir.InternsCount)</option>
+            }
+        }
+    </select>
+
+    <select @bind="selectedProject"
+            @bind:after="ApplyFilters"
+            class="select select-bordered w-full md:w-64">
+        <option value="">Все проекты</option>
+        @if (projects != null)
+        {
+            @foreach (var proj in projects)
+            {
+                <option value="@proj.Name">@proj.Name (@proj.InternsCount)</option>
+            }
+        }
+    </select>
+
+    <button @onclick="ApplyFilters" class="btn btn-outline">Применить</button>
+    <button @onclick="ClearFilters" class="btn btn-ghost">Сбросить</button>
+</div>
+
+@if (isLoading)
+{
+    <div class="flex justify-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+}
+else if (pagedInterns?.Items == null || !pagedInterns.Items.Any())
+{
+    <div class="alert alert-info">Нет стажёров</div>
+}
+else
+{
+    <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                    <th>Email</th>
+                    <th>Телефон</th>
+                    <th>Направление</th>
+                    <th>Проект</th>
+                    <th>Создан</th>
+                    <th class="w-32">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in pagedInterns.Items)
+                {
+                    <tr class="hover">
+                        <td class="font-medium">@i.FullName</td>
+                        <td>@i.Email</td>
+                        <td>@i.Phone</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(i.Direction))
+                            {
+                                <span class="badge badge-outline">@i.Direction</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(i.Project))
+                            {
+                                <span class="badge badge-primary">@i.Project</span>
+                            }
+                        </td>
+                        <td>@i.CreatedAt:dd.MM.yyyy</td>
+                        <td class="flex gap-2">
+                            <button class="btn btn-ghost btn-xs" @onclick="() => OpenEdit(i)">
+                                Изменить
+                            </button>
+                            <button class="btn btn-ghost btn-xs text-error" @onclick="() => OpenDelete(i.Id, i.FullName)">
+                                Удалить
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (pagedInterns.TotalPages > 1)
+    {
+        <div class="flex justify-center mt-8">
+            <div class="join">
+                @for (int i = 0; i < pagedInterns.TotalPages; i++)
+                {
+                    var page = i;
+                    <button class="join-item btn @(pageIndex == page ? "btn-active" : "")"
+                            @onclick="() => ChangePage(page)">
+                        @(page + 1)
+                    </button>
+                }
+            </div>
+        </div>
+    }
+}
+
+<EditInternModal @ref="editInternModal"
+                 OnSaved="LoadAllAsync"
+                 OnClose="() => editModalOpen = false" />
+
+<ConfirmDeleteModal ModalId="@(deleteModalOpen ? "delete-modal" : null)"
+                    EntityName="@internToDeleteName"
+                    OnConfirm="ConfirmDelete"
+                    OnCancel="() => { deleteModalOpen = false; internToDeleteId = Guid.Empty; }" />
+
+@code {
+    private PaginatedList<InternDto>? pagedInterns;
+    private List<DirectionDto>? directions;
+    private List<ProjectDto>? projects;
+
+    private string searchQuery = "";
+    private string selectedDirection = "";
+    private string selectedProject = "";
+    private int pageIndex = 0;
+    private const int pageSize = 15;
+    private bool isLoading = true;
+
+    private EditInternModal? editInternModal;
+    private bool editModalOpen = false;
+    private bool deleteModalOpen = false;
+    private Guid internToDeleteId;
+    private string internToDeleteName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllAsync();
+    }
+
+    private async Task LoadAllAsync()
+    {
+        isLoading = true;
+
+        try
+        {
+            var result = await InternService.GetPagedWithFiltersAsync(
+                pageIndex, pageSize, selectedDirection, selectedProject, searchQuery.Trim());
+
+            pagedInterns = result.Interns;
+            directions = result.Directions;
+            projects = result.Projects;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        pageIndex = 0;
+        await LoadAllAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        selectedDirection = "";
+        selectedProject = "";
+        searchQuery = "";
+        pageIndex = 0;
+        await LoadAllAsync();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            pageIndex = 0;
+            await LoadAllAsync();
+        }
+    }
+
+    private async Task ChangePage(int page)
+    {
+        pageIndex = page;
+        await LoadAllAsync();
+    }
+
+    private void OpenEdit(InternDto intern)
+    {
+        editInternModal?.Open(intern);
+        editModalOpen = true;
+    }
+
+    private void OpenDelete(Guid id, string name)
+    {
+        internToDeleteId = id;
+        internToDeleteName = name;
+        deleteModalOpen = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        try
+        {
+            await InternService.DeleteAsync(internToDeleteId);
+            await LoadAllAsync();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Ошибка удаления: " + ex.Message);
+        }
+        finally
+        {
+            deleteModalOpen = false;
+            internToDeleteId = Guid.Empty;
+        }
+    }
+
+    [JSInvokable]
+    public async Task InternsUpdated()
+    {
+        await LoadAllAsync();
+    }
+
+    public void Dispose()
+    {
+        JS.InvokeVoidAsync("signalRDisconnect");
+    }
+}

@@ -1,0 +1,60 @@
+﻿@using InternsRegister.Application.Interfaces
+@inject IInternService InternService
+
+@if (interns == null)
+{
+    <div class="flex justify-center py-4">
+        <span class="loading loading-spinner"></span>
+    </div>
+}
+else if (!interns.Any())
+{
+    <p class="text-gray-500 italic">Нет стажёров</p>
+}
+else
+{
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @foreach (var intern in interns)
+        {
+            <div class="card bg-base-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+                <div class="font-semibold text-lg">@intern.FullName</div>
+                <div class="text-sm opacity-80">@intern.Email</div>
+                @if (!string.IsNullOrEmpty(intern.Phone))
+                {
+                    <div class="text-sm opacity-70">@intern.Phone</div>
+                }
+                @if (!string.IsNullOrEmpty(intern.Direction))
+                {
+                    <div class="badge badge-outline badge-sm mt-2">@intern.Direction</div>
+                }
+                @if (!string.IsNullOrEmpty(intern.Project))
+                {
+                    <div class="badge badge-primary badge-sm mt-1">@intern.Project</div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? DirectionId { get; set; }
+    [Parameter] public Guid? ProjectId { get; set; }
+
+    private List<InternDto>? interns;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DirectionId.HasValue)
+        {
+            interns = await InternService.GetByDirectionIdAsync(DirectionId.Value);
+        }
+        else if (ProjectId.HasValue)
+        {
+            interns = await InternService.GetByProjectIdAsync(ProjectId.Value);
+        }
+        else
+        {
+            interns = new List<InternDto>();
+        }
+    }
+}
